@@ -29,8 +29,10 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 const Indicator = GObject.registerClass(
 class Indicator extends PanelMenu.Button {
-    _init() {
+    _init(settings) {
         super._init(0.0, _('Netbird VPN Indicator'));
+
+        this._settings = settings;
 
         this._icon = new St.Icon({
             icon_name: 'network-vpn-symbolic',
@@ -90,15 +92,34 @@ class Indicator extends PanelMenu.Button {
                 flags: Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
             });
 
-            const subprocess = launcher.spawnv(['/usr/bin/netbird', ...args]);
-            const [stdout, stderr] = await subprocess.communicate_utf8_async(null, null);
+            const browserCommand = this._settings.get_string('browser-command');
+            if (browserCommand && browserCommand.trim() !== '') {
+                launcher.setenv('BROWSER', browserCommand, true);
+            }
 
-            const success = subprocess.get_successful();
-            return {
-                success,
-                stdout: stdout || '',
-                stderr: stderr || '',
-            };
+            const subprocess = launcher.spawnv(['/usr/bin/netbird', ...args]);
+
+            return new Promise((resolve, reject) => {
+                subprocess.communicate_utf8_async(null, null, (proc, res) => {
+                    try {
+                        const [, stdout, stderr] = proc.communicate_utf8_finish(res);
+                        const success = proc.get_successful();
+
+                        resolve({
+                            success,
+                            stdout: stdout || '',
+                            stderr: stderr || '',
+                        });
+                    } catch (e) {
+                        logError(e, 'Failed to finish netbird command');
+                        resolve({
+                            success: false,
+                            stdout: '',
+                            stderr: e.message,
+                        });
+                    }
+                });
+            });
         } catch (e) {
             logError(e, 'Failed to execute netbird command');
             return {
@@ -121,7 +142,7 @@ class Indicator extends PanelMenu.Button {
     async _updateStatus() {
         const result = await this._executeNetbirdCommand(['status', '--json']);
 
-        if (!result.success || !result.stdout.trim()) {
+        if (!result.stdout.trim()) {
             this._setErrorState('Daemon not running');
             return;
         }
@@ -134,6 +155,8 @@ class Indicator extends PanelMenu.Button {
 
         if (status.daemonStatus === 'Connected') {
             this._setConnectedState(status);
+        } else if (status.daemonStatus === 'NeedsLogin') {
+            this._setNeedsLoginState(status);
         } else {
             this._setDisconnectedState(status);
         }
@@ -171,6 +194,18 @@ class Indicator extends PanelMenu.Button {
         this._disconnectButton.setSensitive(false);
     }
 
+    _setNeedsLoginState(status) {
+        this._currentState = 'needslogin';
+        this._icon.icon_name = 'network-vpn-disconnected-symbolic';
+        this._statusLabel.label.text = _('Status: Needs Login');
+
+        this._detailsLabel.label.text = _('Click Connect to login');
+        this._detailsLabel.visible = true;
+
+        this._connectButton.setSensitive(true);
+        this._disconnectButton.setSensitive(false);
+    }
+
     _setErrorState(errorMsg) {
         this._currentState = 'error';
         this._icon.icon_name = 'network-error-symbolic';
@@ -183,12 +218,23 @@ class Indicator extends PanelMenu.Button {
     }
 
     async _executeNetbirdUp() {
+        if (this._currentState === 'needslogin') {
+            Main.notify(_('Netbird'), _('Logging in...'));
+            const loginResult = await this._executeNetbirdCommand(['login']);
+            if (!loginResult.success) {
+                Main.notify(_('Netbird Error'), _(`Login failed: ${loginResult.stderr}`));
+                this._updateStatus();
+                return;
+            }
+        }
+
+        Main.notify(_('Netbird'), _('Connecting...'));
         const result = await this._executeNetbirdCommand(['up']);
         if (result.success) {
-            Main.notify(_('Netbird'), _('Connecting...'));
             this._updateStatus();
         } else {
             Main.notify(_('Netbird Error'), _(`Failed to connect: ${result.stderr}`));
+            this._updateStatus();
         }
     }
 
@@ -219,7 +265,10 @@ class Indicator extends PanelMenu.Button {
             return;
         }
 
-        this._pollSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 10000, () => {
+        const intervalSeconds = this._settings.get_int('refresh-interval');
+        const intervalMs = intervalSeconds * 1000;
+
+        this._pollSourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, intervalMs, () => {
             this._updateStatus();
             return GLib.SOURCE_CONTINUE;
         });
@@ -240,7 +289,8 @@ class Indicator extends PanelMenu.Button {
 
 export default class NetbirdExtension extends Extension {
     enable() {
-        this._indicator = new Indicator();
+        this._settings = this.getSettings('org.gnome.shell.extensions.netbird');
+        this._indicator = new Indicator(this._settings);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
         this._indicator._updateStatus();
         this._indicator._startPolling();
@@ -249,5 +299,6 @@ export default class NetbirdExtension extends Extension {
     disable() {
         this._indicator.destroy();
         this._indicator = null;
+        this._settings = null;
     }
 }

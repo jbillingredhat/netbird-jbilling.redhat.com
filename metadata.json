@@ -4,5 +4,6 @@
   "uuid": "netbird@jbilling.redhat.com",
   "shell-version": [
     "50"
-  ]
+  ],
+  "settings-schema": "org.gnome.shell.extensions.netbird"
 }

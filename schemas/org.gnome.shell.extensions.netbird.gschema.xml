@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.netbird" path="/org/gnome/shell/extensions/netbird/">
+    <key name="browser-command" type="s">
+      <default>''</default>
+      <summary>Browser command for netbird login</summary>
+      <description>Custom browser command to use when netbird login opens a browser. Leave empty to use system default. Example: '/usr/bin/epiphany --private-instance'</description>
+    </key>
+    <key name="refresh-interval" type="i">
+      <default>10</default>
+      <range min="5" max="60"/>
+      <summary>Refresh interval in seconds</summary>
+      <description>How often to poll netbird status (5-60 seconds)</description>
+    </key>
+  </schema>
+</schemalist>
