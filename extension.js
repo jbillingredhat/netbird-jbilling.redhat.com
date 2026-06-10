@@ -325,11 +325,6 @@ class Indicator extends PanelMenu.Button {
             return;
         }
 
-        if (profiles.length === 1) {
-            this._profilesSeparator.visible = false;
-            return;
-        }
-
         this._profilesSeparator.visible = true;
 
         const profilesLabel = new PopupMenu.PopupMenuItem(_('Profiles'), {
@@ -338,21 +333,31 @@ class Indicator extends PanelMenu.Button {
         profilesLabel.label.add_style_class_name('popup-subtitle-menu-item');
         this._profilesSection.addMenuItem(profilesLabel);
 
-        profiles.forEach(profileName => {
-            const isActive = profileName === activeProfile;
-            const label = isActive ? `✓ ${profileName}` : `   ${profileName}`;
-            const item = new PopupMenu.PopupMenuItem(label);
+        // Show profile list only if there are 2+ profiles to switch between
+        if (profiles.length > 1) {
+            profiles.forEach(profileName => {
+                const isActive = profileName === activeProfile;
+                const label = isActive ? `✓ ${profileName}` : `   ${profileName}`;
+                const item = new PopupMenu.PopupMenuItem(label);
 
-            if (isActive) {
-                item.setSensitive(false);
-            } else {
-                item.connect('activate', () => {
-                    this._switchProfile(profileName);
-                });
-            }
+                if (isActive) {
+                    item.setSensitive(false);
+                } else {
+                    item.connect('activate', () => {
+                        this._switchProfile(profileName);
+                    });
+                }
 
-            this._profilesSection.addMenuItem(item);
+                this._profilesSection.addMenuItem(item);
+            });
+        }
+
+        // Always show "Manage Profiles..." button when profiles section is visible
+        const manageItem = new PopupMenu.PopupMenuItem(_('Manage Profiles...'));
+        manageItem.connect('activate', () => {
+            this._executeNetbirdProfilesUI();
         });
+        this._profilesSection.addMenuItem(manageItem);
     }
 
     _setConnectedState(status) {
@@ -549,6 +554,18 @@ class Indicator extends PanelMenu.Button {
         } catch (e) {
             logError(e, 'Failed to launch netbird-ui');
             Main.notify(_('Netbird Error'), _('Failed to launch Advanced Settings'));
+        }
+    }
+
+    async _executeNetbirdProfilesUI() {
+        try {
+            const launcher = new Gio.SubprocessLauncher({
+                flags: Gio.SubprocessFlags.NONE,
+            });
+            launcher.spawnv(['/usr/bin/netbird-ui', '-profiles']);
+        } catch (e) {
+            logError(e, 'Failed to launch netbird-ui profiles');
+            Main.notify(_('Netbird Error'), _('Failed to launch Profile Manager'));
         }
     }
 
