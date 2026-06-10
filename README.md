@@ -6,6 +6,7 @@ A GNOME Shell extension that provides quick access to Netbird VPN status and con
 
 - **Real-time VPN Status**: Displays current connection state with visual indicators
 - **Quick Controls**: Connect and disconnect from the Netbird VPN with one click
+- **Profile Management**: Switch between multiple Netbird profiles directly from the menu
 - **Login Detection**: Automatically detects when login is required and handles authentication flow
 - **Session Expiration Handling**: Configurable actions when session expires (notify, auto-reconnect, or silent)
 - **Connection Details**: Shows your Netbird IP address and connected peer count
@@ -61,8 +62,22 @@ Click the panel icon to access:
 - **Status Display**: Shows current connection state, IP address, and peer count
 - **Connect**: Establish VPN connection (handles login if needed)
 - **Disconnect**: Terminate VPN connection
-- **Refresh**: Manually update status
+- **Refresh**: Manually update status and profile list
+- **Profiles** (if multiple profiles exist): Switch between Netbird profiles
+  - Active profile is marked with ✓ and disabled
+  - Click any other profile to switch to it
+  - The profiles section only appears when you have 2 or more profiles
 - **Advanced Settings**: Launch Netbird UI configuration
+
+### Profile Management
+
+If you use multiple Netbird profiles (work, personal, etc.), the extension automatically detects them and shows a Profiles section in the menu:
+
+- Profiles are loaded when the extension starts and when you click Refresh
+- The currently active profile is marked with ✓
+- Click any non-active profile to switch to it
+- After switching, the extension automatically refreshes the connection status
+- Single-profile setups won't show the Profiles section (keeps the menu clean)
 
 ## Configuration
 

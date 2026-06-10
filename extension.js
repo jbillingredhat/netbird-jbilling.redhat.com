@@ -76,10 +76,17 @@ class Indicator extends PanelMenu.Button {
         const refreshButton = new PopupMenu.PopupMenuItem(_('Refresh'));
         refreshButton.connect('activate', () => {
             this._updateStatus();
+            this._updateProfiles();
         });
         this.menu.addMenuItem(refreshButton);
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+        this._profilesSection = new PopupMenu.PopupMenuSection();
+        this.menu.addMenuItem(this._profilesSection);
+        this._profilesSeparator = new PopupMenu.PopupSeparatorMenuItem();
+        this.menu.addMenuItem(this._profilesSeparator);
+        this._profilesSeparator.visible = false;
 
         const settingsButton = new PopupMenu.PopupMenuItem(_('Advanced Settings'));
         settingsButton.connect('activate', () => {
@@ -141,6 +148,30 @@ class Indicator extends PanelMenu.Button {
         }
     }
 
+    _parseProfileList(stdout) {
+        const profiles = [];
+        let activeProfile = null;
+
+        const lines = stdout.trim().split('\n');
+        for (const line of lines) {
+            if (line.startsWith('Found ') || line.trim() === '') {
+                continue;
+            }
+
+            const isActive = line.startsWith('✓');
+            const profileName = line.replace('✓', '').trim();
+
+            if (profileName) {
+                profiles.push(profileName);
+                if (isActive) {
+                    activeProfile = profileName;
+                }
+            }
+        }
+
+        return { profiles, activeProfile };
+    }
+
     async _updateStatus() {
         const result = await this._executeNetbirdCommand(['status', '--json']);
 
@@ -164,6 +195,67 @@ class Indicator extends PanelMenu.Button {
         } else {
             this._setDisconnectedState(status);
         }
+    }
+
+    async _updateProfiles() {
+        const result = await this._executeNetbirdCommand(['profile', 'list']);
+
+        if (!result.success) {
+            return;
+        }
+
+        const { profiles, activeProfile } = this._parseProfileList(result.stdout);
+        this._updateProfilesMenu(profiles, activeProfile);
+    }
+
+    async _switchProfile(profileName) {
+        Main.notify(_('Netbird'), _(`Switching to profile: ${profileName}...`));
+        const result = await this._executeNetbirdCommand(['profile', 'select', profileName]);
+
+        if (result.success) {
+            this._updateProfiles();
+            this._updateStatus();
+        } else {
+            Main.notify(_('Netbird Error'), _(`Failed to switch profile: ${result.stderr}`));
+        }
+    }
+
+    _updateProfilesMenu(profiles, activeProfile) {
+        this._profilesSection.removeAll();
+
+        if (profiles.length === 0) {
+            this._profilesSeparator.visible = false;
+            return;
+        }
+
+        if (profiles.length === 1) {
+            this._profilesSeparator.visible = false;
+            return;
+        }
+
+        this._profilesSeparator.visible = true;
+
+        const profilesLabel = new PopupMenu.PopupMenuItem(_('Profiles'), {
+            reactive: false,
+        });
+        profilesLabel.label.add_style_class_name('popup-subtitle-menu-item');
+        this._profilesSection.addMenuItem(profilesLabel);
+
+        profiles.forEach(profileName => {
+            const isActive = profileName === activeProfile;
+            const label = isActive ? `✓ ${profileName}` : `   ${profileName}`;
+            const item = new PopupMenu.PopupMenuItem(label);
+
+            if (isActive) {
+                item.setSensitive(false);
+            } else {
+                item.connect('activate', () => {
+                    this._switchProfile(profileName);
+                });
+            }
+
+            this._profilesSection.addMenuItem(item);
+        });
     }
 
     _setConnectedState(status) {
@@ -342,6 +434,7 @@ export default class NetbirdExtension extends Extension {
         this._indicator = new Indicator(this._settings);
         Main.panel.addToStatusArea(this.uuid, this._indicator);
         this._indicator._updateStatus();
+        this._indicator._updateProfiles();
         this._indicator._startPolling();
     }
 
