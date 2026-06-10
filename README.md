@@ -31,7 +31,7 @@ A GNOME Shell extension that provides quick access to Netbird VPN status and con
 
 1. Clone or copy this extension to your GNOME Shell extensions directory:
    ```bash
-   cp -r netbird@jbilling.redhat.com ~/.local/share/gnome-shell/extensions/
+   cp -r netbird-jbilling.redhat.com ~/.local/share/gnome-shell/extensions/netbird@jbilling.redhat.com
    ```
 
 2. Compile the GSettings schema:
