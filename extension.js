@@ -158,8 +158,11 @@ class Indicator extends PanelMenu.Button {
                 continue;
             }
 
-            const isActive = line.startsWith('✓');
-            const profileName = line.replace('✓', '').trim();
+            const trimmedLine = line.trim();
+            const isActive = trimmedLine.startsWith('✓') || trimmedLine.startsWith('x');
+
+            // Remove any leading checkmark characters (✓, ✔, x, etc.) and trim
+            const profileName = trimmedLine.replace(/^[✓✔x]\s*/, '').trim();
 
             if (profileName) {
                 profiles.push(profileName);
