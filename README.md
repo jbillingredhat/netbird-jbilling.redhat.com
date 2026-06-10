@@ -1,0 +1,117 @@
+# Netbird VPN GNOME Shell Extension
+
+A GNOME Shell extension that provides quick access to Netbird VPN status and controls directly from your top panel.
+
+## Features
+
+- **Real-time VPN Status**: Displays current connection state with visual indicators
+- **Quick Controls**: Connect and disconnect from the Netbird VPN with one click
+- **Login Detection**: Automatically detects when login is required and handles authentication flow
+- **Connection Details**: Shows your Netbird IP address and connected peer count
+- **Automatic Polling**: Regularly updates status at configurable intervals
+- **Browser Customization**: Configure which browser to use for login (useful for private browsing modes)
+- **Advanced Settings**: Quick access to the Netbird UI settings panel
+
+## Requirements
+
+- GNOME Shell 50 or later
+- Netbird CLI installed at `/usr/bin/netbird`
+- Netbird UI installed at `/usr/bin/netbird-ui` (optional, for advanced settings)
+
+## Installation
+
+### Manual Installation
+
+1. Clone or copy this extension to your GNOME Shell extensions directory:
+   ```bash
+   cp -r netbird@jbilling.redhat.com ~/.local/share/gnome-shell/extensions/
+   ```
+
+2. Compile the GSettings schema:
+   ```bash
+   cd ~/.local/share/gnome-shell/extensions/netbird@jbilling.redhat.com
+   glib-compile-schemas schemas/
+   ```
+
+3. Restart GNOME Shell:
+   - On X11: Press `Alt+F2`, type `r`, and press Enter
+   - On Wayland: Log out and log back in
+
+4. Enable the extension:
+   ```bash
+   gnome-extensions enable netbird@jbilling.redhat.com
+   ```
+
+## Usage
+
+### Panel Indicator
+
+Once enabled, a VPN icon will appear in your top panel with the following states:
+
+- **Connected** (🔒): VPN is active and connected
+- **Disconnected** (🔓): VPN is inactive
+- **Needs Login** (🔓): Authentication required
+- **Error** (⚠️): Daemon not running or other issue
+
+### Menu Options
+
+Click the panel icon to access:
+
+- **Status Display**: Shows current connection state, IP address, and peer count
+- **Connect**: Establish VPN connection (handles login if needed)
+- **Disconnect**: Terminate VPN connection
+- **Refresh**: Manually update status
+- **Advanced Settings**: Launch Netbird UI configuration
+
+## Configuration
+
+Access the extension preferences through GNOME Extensions app or:
+
+```bash
+gnome-extensions prefs netbird@jbilling.redhat.com
+```
+
+### Available Settings
+
+**Browser Command**
+- Specify a custom browser for Netbird login authentication
+- Useful for opening login pages in private browsing mode
+- Examples:
+  - `/usr/bin/epiphany --private-instance`
+  - `/usr/bin/firefox --private-window`
+- Leave empty to use system default
+
+**Refresh Interval**
+- How often to poll Netbird status (5-60 seconds)
+- Default: 10 seconds
+- Lower values provide more responsive updates but use slightly more resources
+
+## Troubleshooting
+
+### Extension doesn't appear
+- Ensure Netbird is installed: `which netbird`
+- Check extension is enabled: `gnome-extensions list --enabled`
+- Check logs: `journalctl -f -o cat /usr/bin/gnome-shell`
+
+### "Daemon not running" error
+- Start Netbird daemon: `sudo systemctl start netbird`
+- Enable at boot: `sudo systemctl enable netbird`
+
+### Login fails to open browser
+- Set a custom browser command in preferences
+- Ensure your browser supports opening URLs from command line
+
+## License
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 2 of the License, or (at your option) any later version.
+
+SPDX-License-Identifier: GPL-2.0-or-later
+
+## Credits
+
+Developed by Jonathan Billings
+
+## Links
+
+- [Netbird Official Website](https://netbird.io/)
+- [Netbird GitHub](https://github.com/netbirdio/netbird)
