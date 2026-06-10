@@ -9,7 +9,12 @@ A GNOME Shell extension that provides quick access to Netbird VPN status and con
 - **Profile Management**: Switch between multiple Netbird profiles directly from the menu
 - **Login Detection**: Automatically detects when login is required and handles authentication flow
 - **Session Expiration Handling**: Configurable actions when session expires (notify, auto-reconnect, or silent)
-- **Connection Details**: Shows your Netbird IP address and connected peer count
+- **Detailed Connection Info**: 
+  - IPv4 and IPv6 addresses
+  - Machine FQDN
+  - Peer connection breakdown (P2P vs Relayed)
+  - DNS server status
+  - Service health warnings (management, signal, relay status)
 - **Automatic Polling**: Regularly updates status at configurable intervals
 - **Browser Customization**: Configure which browser to use for login (useful for private browsing modes)
 - **Advanced Settings**: Quick access to the Netbird UI settings panel
@@ -59,7 +64,14 @@ Once enabled, a VPN icon will appear in your top panel with the following states
 
 Click the panel icon to access:
 
-- **Status Display**: Shows current connection state, IP address, and peer count
+- **Status Display**: Shows current connection state with detailed information:
+  - Connection status (Connected/Disconnected/Needs Login)
+  - IPv4 address
+  - Peer breakdown showing P2P vs Relayed connections (e.g., "Peers: 5 P2P, 2 Relayed")
+  - Machine FQDN (Fully Qualified Domain Name)
+  - IPv6 address
+  - DNS servers in use
+  - Service health warnings if management/signal servers are down or relays unavailable
 - **Connect**: Establish VPN connection (handles login if needed)
 - **Disconnect**: Terminate VPN connection
 - **Refresh**: Manually update status and profile list
@@ -78,6 +90,18 @@ If you use multiple Netbird profiles (work, personal, etc.), the extension autom
 - Click any non-active profile to switch to it
 - After switching, the extension automatically refreshes the connection status
 - Single-profile setups won't show the Profiles section (keeps the menu clean)
+
+### Understanding Connection Information
+
+**Peer Connection Types:**
+- **P2P (Peer-to-Peer)**: Direct encrypted connection between your machine and the peer - faster and lower latency
+- **Relayed**: Connection routed through a Netbird relay server - used when direct P2P connection isn't possible due to firewalls/NAT
+
+**Service Health:**
+- **Management**: Controls network configuration and access policies
+- **Signal**: Coordinates P2P connection establishment
+- **Relays**: Fallback servers when P2P connections fail
+- Warnings appear if any of these services are unavailable
 
 ## Configuration
 

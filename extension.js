@@ -59,6 +59,30 @@ class Indicator extends PanelMenu.Button {
         });
         this.menu.addMenuItem(this._detailsLabel);
 
+        this._fqdnLabel = new PopupMenu.PopupMenuItem('', {
+            reactive: false,
+        });
+        this.menu.addMenuItem(this._fqdnLabel);
+        this._fqdnLabel.visible = false;
+
+        this._ipv6Label = new PopupMenu.PopupMenuItem('', {
+            reactive: false,
+        });
+        this.menu.addMenuItem(this._ipv6Label);
+        this._ipv6Label.visible = false;
+
+        this._dnsLabel = new PopupMenu.PopupMenuItem('', {
+            reactive: false,
+        });
+        this.menu.addMenuItem(this._dnsLabel);
+        this._dnsLabel.visible = false;
+
+        this._healthLabel = new PopupMenu.PopupMenuItem('', {
+            reactive: false,
+        });
+        this.menu.addMenuItem(this._healthLabel);
+        this._healthLabel.visible = false;
+
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         this._connectButton = new PopupMenu.PopupMenuItem(_('Connect'));
@@ -175,6 +199,76 @@ class Indicator extends PanelMenu.Button {
         return { profiles, activeProfile };
     }
 
+    _getPeerBreakdown(peerDetails) {
+        let p2pCount = 0;
+        let relayedCount = 0;
+        let otherCount = 0;
+
+        peerDetails.forEach(peer => {
+            if (peer.status !== 'Connected') {
+                return;
+            }
+
+            if (peer.connectionType === 'P2P') {
+                p2pCount++;
+            } else if (peer.connectionType === 'Relayed') {
+                relayedCount++;
+            } else {
+                otherCount++;
+            }
+        });
+
+        const total = p2pCount + relayedCount + otherCount;
+        if (total === 0) {
+            return 'Peers: 0';
+        }
+
+        const parts = [];
+        if (p2pCount > 0) parts.push(`${p2pCount} P2P`);
+        if (relayedCount > 0) parts.push(`${relayedCount} Relayed`);
+        if (otherCount > 0) parts.push(`${otherCount} Other`);
+
+        return `Peers: ${parts.join(', ')}`;
+    }
+
+    _getDnsInfo(dnsServers) {
+        const enabledServers = dnsServers.filter(dns => dns.enabled && !dns.error);
+        if (enabledServers.length === 0) {
+            return null;
+        }
+
+        const serverAddresses = enabledServers
+            .flatMap(dns => dns.servers || [])
+            .filter((value, index, self) => self.indexOf(value) === index); // unique
+
+        if (serverAddresses.length === 0) {
+            return null;
+        }
+
+        return `DNS: ${serverAddresses.join(', ')}`;
+    }
+
+    _getHealthWarnings(status) {
+        const warnings = [];
+
+        if (status.management && !status.management.connected) {
+            warnings.push('⚠ Management disconnected');
+        }
+
+        if (status.signal && !status.signal.connected) {
+            warnings.push('⚠ Signal disconnected');
+        }
+
+        if (status.relays && status.relays.total > 0) {
+            const unavailableRelays = status.relays.total - (status.relays.available || 0);
+            if (unavailableRelays > 0) {
+                warnings.push(`⚠ ${unavailableRelays} relay(s) unavailable`);
+            }
+        }
+
+        return warnings.length > 0 ? warnings.join(' | ') : null;
+    }
+
     async _updateStatus() {
         const result = await this._executeNetbirdCommand(['status', '--json']);
 
@@ -266,17 +360,59 @@ class Indicator extends PanelMenu.Button {
         this._icon.icon_name = 'network-vpn-symbolic';
         this._statusLabel.label.text = _('Status: Connected');
 
+        // Main details line: IP and peer breakdown
         let details = [];
         if (status.netbirdIp) {
-            details.push(`IP: ${status.netbirdIp}`);
+            // Extract just the IP without the CIDR notation
+            const ip = status.netbirdIp.split('/')[0];
+            details.push(`IP: ${ip}`);
         }
-        if (status.peers) {
-            const peerCount = status.peers.connected || status.peers.total || 0;
-            details.push(`Peers: ${peerCount}`);
+        if (status.peers && status.peers.details) {
+            const peerBreakdown = this._getPeerBreakdown(status.peers.details);
+            details.push(peerBreakdown);
         }
 
         this._detailsLabel.label.text = details.join(' | ');
         this._detailsLabel.visible = details.length > 0;
+
+        // FQDN
+        if (status.fqdn) {
+            this._fqdnLabel.label.text = `FQDN: ${status.fqdn}`;
+            this._fqdnLabel.visible = true;
+        } else {
+            this._fqdnLabel.visible = false;
+        }
+
+        // IPv6
+        if (status.netbirdIpv6) {
+            const ipv6 = status.netbirdIpv6.split('/')[0];
+            this._ipv6Label.label.text = `IPv6: ${ipv6}`;
+            this._ipv6Label.visible = true;
+        } else {
+            this._ipv6Label.visible = false;
+        }
+
+        // DNS Status
+        if (status.dnsServers && status.dnsServers.length > 0) {
+            const dnsInfo = this._getDnsInfo(status.dnsServers);
+            if (dnsInfo) {
+                this._dnsLabel.label.text = dnsInfo;
+                this._dnsLabel.visible = true;
+            } else {
+                this._dnsLabel.visible = false;
+            }
+        } else {
+            this._dnsLabel.visible = false;
+        }
+
+        // Service Health
+        const healthWarnings = this._getHealthWarnings(status);
+        if (healthWarnings) {
+            this._healthLabel.label.text = healthWarnings;
+            this._healthLabel.visible = true;
+        } else {
+            this._healthLabel.visible = false;
+        }
 
         this._connectButton.setSensitive(false);
         this._disconnectButton.setSensitive(true);
@@ -288,6 +424,10 @@ class Indicator extends PanelMenu.Button {
         this._statusLabel.label.text = _('Status: Disconnected');
         this._detailsLabel.label.text = '';
         this._detailsLabel.visible = false;
+        this._fqdnLabel.visible = false;
+        this._ipv6Label.visible = false;
+        this._dnsLabel.visible = false;
+        this._healthLabel.visible = false;
 
         this._connectButton.setSensitive(true);
         this._disconnectButton.setSensitive(false);
@@ -302,6 +442,10 @@ class Indicator extends PanelMenu.Button {
 
         this._detailsLabel.label.text = _('Click Connect to login');
         this._detailsLabel.visible = true;
+        this._fqdnLabel.visible = false;
+        this._ipv6Label.visible = false;
+        this._dnsLabel.visible = false;
+        this._healthLabel.visible = false;
 
         this._connectButton.setSensitive(true);
         this._disconnectButton.setSensitive(false);
@@ -317,6 +461,10 @@ class Indicator extends PanelMenu.Button {
         this._statusLabel.label.text = `Status: ${errorMsg}`;
         this._detailsLabel.label.text = '';
         this._detailsLabel.visible = false;
+        this._fqdnLabel.visible = false;
+        this._ipv6Label.visible = false;
+        this._dnsLabel.visible = false;
+        this._healthLabel.visible = false;
 
         this._connectButton.setSensitive(false);
         this._disconnectButton.setSensitive(false);
