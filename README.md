@@ -7,6 +7,7 @@ A GNOME Shell extension that provides quick access to Netbird VPN status and con
 - **Real-time VPN Status**: Displays current connection state with visual indicators
 - **Quick Controls**: Connect and disconnect from the Netbird VPN with one click
 - **Login Detection**: Automatically detects when login is required and handles authentication flow
+- **Session Expiration Handling**: Configurable actions when session expires (notify, auto-reconnect, or silent)
 - **Connection Details**: Shows your Netbird IP address and connected peer count
 - **Automatic Polling**: Regularly updates status at configurable intervals
 - **Browser Customization**: Configure which browser to use for login (useful for private browsing modes)
@@ -85,6 +86,15 @@ gnome-extensions prefs netbird@jbilling.redhat.com
 - How often to poll Netbird status (5-60 seconds)
 - Default: 10 seconds
 - Lower values provide more responsive updates but use slightly more resources
+
+**Session Expiration Action**
+- Controls what happens when the extension detects your Netbird session has expired
+- Options:
+  - **Do nothing** (default): Silently update the status icon and menu
+  - **Show notification**: Display a notification alerting you that the session expired
+  - **Show notification with reconnect button**: Display a notification with a button to reconnect immediately
+  - **Automatically reconnect**: Automatically initiate login and connection when expiration is detected
+- Expiration is detected when the extension transitions from "Connected" to "Needs Login" state
 
 ## Troubleshooting
 

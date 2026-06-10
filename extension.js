@@ -24,6 +24,7 @@ import GLib from 'gi://GLib';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import * as MessageTray from 'resource:///org/gnome/shell/ui/messageTray.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
@@ -42,6 +43,7 @@ class Indicator extends PanelMenu.Button {
 
         this._pollSourceId = null;
         this._currentState = 'unknown';
+        this._previousState = 'unknown';
 
         this._buildMenu();
     }
@@ -153,6 +155,8 @@ class Indicator extends PanelMenu.Button {
             return;
         }
 
+        this._previousState = this._currentState;
+
         if (status.daemonStatus === 'Connected') {
             this._setConnectedState(status);
         } else if (status.daemonStatus === 'NeedsLogin') {
@@ -195,6 +199,8 @@ class Indicator extends PanelMenu.Button {
     }
 
     _setNeedsLoginState(status) {
+        const wasConnected = this._previousState === 'connected';
+
         this._currentState = 'needslogin';
         this._icon.icon_name = 'network-vpn-disconnected-symbolic';
         this._statusLabel.label.text = _('Status: Needs Login');
@@ -204,6 +210,10 @@ class Indicator extends PanelMenu.Button {
 
         this._connectButton.setSensitive(true);
         this._disconnectButton.setSensitive(false);
+
+        if (wasConnected) {
+            this._handleSessionExpiration();
+        }
     }
 
     _setErrorState(errorMsg) {
@@ -215,6 +225,45 @@ class Indicator extends PanelMenu.Button {
 
         this._connectButton.setSensitive(false);
         this._disconnectButton.setSensitive(false);
+    }
+
+    _handleSessionExpiration() {
+        const expirationAction = this._settings.get_string('expiration-action');
+
+        switch (expirationAction) {
+            case 'notify':
+                Main.notify(
+                    _('Netbird Session Expired'),
+                    _('Your Netbird session has expired. Click the VPN icon to reconnect.')
+                );
+                break;
+
+            case 'notify-action':
+                const source = new MessageTray.Source({
+                    title: _('Netbird Session Expired'),
+                    iconName: 'network-vpn-disconnected-symbolic',
+                });
+                Main.messageTray.add(source);
+
+                const notification = new MessageTray.Notification({
+                    source: source,
+                    title: _('Netbird Session Expired'),
+                    body: _('Your Netbird session has expired.'),
+                });
+                notification.addAction(_('Reconnect'), () => {
+                    this._executeNetbirdUp();
+                });
+                source.addNotification(notification);
+                break;
+
+            case 'auto-reconnect':
+                this._executeNetbirdUp();
+                break;
+
+            case 'none':
+            default:
+                break;
+        }
     }
 
     async _executeNetbirdUp() {

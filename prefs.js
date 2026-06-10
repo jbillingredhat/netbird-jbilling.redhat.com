@@ -51,6 +51,34 @@ export default class NetbirdPreferences extends ExtensionPreferences {
         });
         group.add(intervalRow);
 
+        const expirationRow = new Adw.ComboRow({
+            title: 'Session Expiration Action',
+            subtitle: 'What to do when Netbird session expires',
+        });
+
+        const expirationModel = new Gtk.StringList();
+        expirationModel.append('Do nothing');
+        expirationModel.append('Show notification');
+        expirationModel.append('Show notification with reconnect button');
+        expirationModel.append('Automatically reconnect');
+        expirationRow.set_model(expirationModel);
+
+        const expirationValue = settings.get_string('expiration-action');
+        const expirationIndex = {
+            'none': 0,
+            'notify': 1,
+            'notify-action': 2,
+            'auto-reconnect': 3,
+        }[expirationValue] || 0;
+        expirationRow.set_selected(expirationIndex);
+
+        expirationRow.connect('notify::selected', (row) => {
+            const selected = row.get_selected();
+            const values = ['none', 'notify', 'notify-action', 'auto-reconnect'];
+            settings.set_string('expiration-action', values[selected]);
+        });
+        group.add(expirationRow);
+
         window.add(page);
     }
 }

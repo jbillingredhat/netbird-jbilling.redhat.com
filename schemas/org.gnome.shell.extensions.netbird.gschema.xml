@@ -12,5 +12,10 @@
       <summary>Refresh interval in seconds</summary>
       <description>How often to poll netbird status (5-60 seconds)</description>
     </key>
+    <key name="expiration-action" type="s">
+      <default>'none'</default>
+      <summary>Action when session expires</summary>
+      <description>What to do when Netbird session expiration is detected. Options: 'none', 'notify', 'notify-action', 'auto-reconnect'</description>
+    </key>
   </schema>
 </schemalist>
