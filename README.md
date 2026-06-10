@@ -75,28 +75,28 @@ Click the panel icon to access:
 - **Connect**: Establish VPN connection (handles login if needed)
 - **Disconnect**: Terminate VPN connection
 - **Refresh**: Manually update status and profile list
-- **Profiles**: Manage and switch between Netbird profiles
-  - Shows a list of profiles when you have 2 or more
+- **Profiles** (if multiple profiles exist): Switch between Netbird profiles
   - Active profile is marked with ✓ and disabled
-  - Click any profile to switch to it
-  - **Manage Profiles...** button launches the Netbird UI for adding, removing, and deregistering profiles
+  - Click any other profile to switch to it
+  - The profiles section only appears when you have 2 or more profiles
 - **Advanced Settings**: Launch Netbird UI configuration
+- **Manage Profiles...**: Launch Netbird UI for adding, removing, and deregistering profiles
 
 ### Profile Management
 
-If you use Netbird profiles (work, personal, etc.), the extension provides a Profiles section in the menu:
+If you use multiple Netbird profiles (work, personal, etc.), the extension automatically detects them and shows a Profiles section in the menu:
 
 - Profiles are loaded when the extension starts and when you click Refresh
-- With 2+ profiles: Shows a list where you can switch between them
-  - The currently active profile is marked with ✓
-  - Click any non-active profile to switch to it
-  - After switching, the extension automatically refreshes the connection status
-- With 1 profile: Shows just the "Manage Profiles..." button
-- The **Manage Profiles...** button launches Netbird UI where you can:
-  - Create new profiles
-  - Delete existing profiles
-  - Deregister profiles from the management server
-  - Activate/switch profiles
+- The currently active profile is marked with ✓
+- Click any non-active profile to switch to it
+- After switching, the extension automatically refreshes the connection status
+- Single-profile setups won't show the Profiles section (keeps the menu clean)
+
+The **Manage Profiles...** button (always available at the bottom of the menu) launches Netbird UI where you can:
+- Create new profiles
+- Delete existing profiles
+- Deregister profiles from the management server
+- Activate/switch profiles
 
 ### Understanding Connection Information
 

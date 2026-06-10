@@ -117,6 +117,12 @@ class Indicator extends PanelMenu.Button {
             this._executeNetbirdUI();
         });
         this.menu.addMenuItem(settingsButton);
+
+        const profilesButton = new PopupMenu.PopupMenuItem(_('Manage Profiles...'));
+        profilesButton.connect('activate', () => {
+            this._executeNetbirdProfilesUI();
+        });
+        this.menu.addMenuItem(profilesButton);
     }
 
     async _executeNetbirdCommand(args) {
@@ -325,6 +331,11 @@ class Indicator extends PanelMenu.Button {
             return;
         }
 
+        if (profiles.length === 1) {
+            this._profilesSeparator.visible = false;
+            return;
+        }
+
         this._profilesSeparator.visible = true;
 
         const profilesLabel = new PopupMenu.PopupMenuItem(_('Profiles'), {
@@ -333,31 +344,21 @@ class Indicator extends PanelMenu.Button {
         profilesLabel.label.add_style_class_name('popup-subtitle-menu-item');
         this._profilesSection.addMenuItem(profilesLabel);
 
-        // Show profile list only if there are 2+ profiles to switch between
-        if (profiles.length > 1) {
-            profiles.forEach(profileName => {
-                const isActive = profileName === activeProfile;
-                const label = isActive ? `✓ ${profileName}` : `   ${profileName}`;
-                const item = new PopupMenu.PopupMenuItem(label);
+        profiles.forEach(profileName => {
+            const isActive = profileName === activeProfile;
+            const label = isActive ? `✓ ${profileName}` : `   ${profileName}`;
+            const item = new PopupMenu.PopupMenuItem(label);
 
-                if (isActive) {
-                    item.setSensitive(false);
-                } else {
-                    item.connect('activate', () => {
-                        this._switchProfile(profileName);
-                    });
-                }
+            if (isActive) {
+                item.setSensitive(false);
+            } else {
+                item.connect('activate', () => {
+                    this._switchProfile(profileName);
+                });
+            }
 
-                this._profilesSection.addMenuItem(item);
-            });
-        }
-
-        // Always show "Manage Profiles..." button when profiles section is visible
-        const manageItem = new PopupMenu.PopupMenuItem(_('Manage Profiles...'));
-        manageItem.connect('activate', () => {
-            this._executeNetbirdProfilesUI();
+            this._profilesSection.addMenuItem(item);
         });
-        this._profilesSection.addMenuItem(manageItem);
     }
 
     _setConnectedState(status) {
