@@ -184,15 +184,14 @@ class Indicator extends PanelMenu.Button {
 
         const lines = stdout.trim().split('\n');
         for (const line of lines) {
-            if (line.startsWith('Found ') || line.trim() === '') {
+            if (line.startsWith('Found ') || line.trim() === '' ||
+                line.startsWith('NAME')) {
                 continue;
             }
 
             const trimmedLine = line.trim();
-            const isActive = trimmedLine.startsWith('✓');
-
-            // Remove any leading marker characters (✓ for active, ✗ for inactive) and trim
-            const profileName = trimmedLine.replace(/^[✓✗]\s*/, '').trim();
+            const isActive = trimmedLine.includes('✓');
+            const profileName = trimmedLine.replace(/\s*✓\s*$/, '').trim();
 
             if (profileName) {
                 profiles.push(profileName);
