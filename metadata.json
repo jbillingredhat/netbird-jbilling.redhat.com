@@ -3,7 +3,8 @@
   "description": "Provides information on the Netbird VPN, online status and controls for bringing the VPN up and down",
   "uuid": "netbird@jbilling.redhat.com",
   "shell-version": [
-    "50"
+    "50",
+    "51"
   ],
   "settings-schema": "org.gnome.shell.extensions.netbird"
 }
